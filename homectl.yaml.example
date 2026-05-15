@@ -1,119 +1,133 @@
 # homectl configuration
 # Customize for your homelab and cloud infrastructure.
 
-version: "1"
+version: 1
 
-# Active context
-currentContext: lab
+defaultContext: lab
 
-# Named contexts for different environments
 contexts:
-  lab:
-    description: "Local homelab network"
-    defaultHost: media-node
-    envLabels:
-      environment: lab
-      team: personal
+  - name: lab
+    host: media-node
+    tags: [personal, homelab]
 
-  prod:
-    description: "Production VPS"
-    defaultHost: vps-1
-    envLabels:
-      environment: prod
-      team: personal
+  - name: prod
+    host: vps-1
+    tags: [personal, production]
 
-# Host definitions
 hosts:
-  # Local workstation (default when no host specified)
-  local:
-    hostname: localhost
-    connectionMethod: local
-    runtime: compose
-    tags:
-      - local
-      - dev
+  - name: local
+    connection:
+      type: local
+      host: localhost
+    runtime:
+      docker: true
+      compose: true
+    tags: [local, dev]
 
-  # Media server (Raspberry Pi or mini PC)
-  media-node:
-    hostname: media.local
-    sshUser: pi
-    sshPort: 22
-    identityFile: ~/.ssh/homelab_ed25519
-    connectionMethod: ssh
-    runtime: compose
-    tags:
-      - media
-      - lan
+  - name: media-node
+    connection:
+      type: ssh
+      host: media.local
+      user: pi
+      identityFile: ~/.ssh/homelab_ed25519
+    runtime:
+      docker: true
+      compose: true
+    paths:
+      composeRoot: /home/pi/docker
+    tags: [media, lan]
 
-  # Automation node (n8n, home assistant, etc.)
-  automation-node:
-    hostname: automation.local
-    sshUser: admin
-    connectionMethod: ssh
-    runtime: compose
-    tags:
-      - automation
-      - lan
+  - name: automation-node
+    connection:
+      type: ssh
+      host: automation.local
+      user: admin
+      identityFile: ~/.ssh/homelab_ed25519
+    runtime:
+      docker: true
+      compose: true
+    tags: [automation, lan]
 
-  # Database server
-  db-node:
-    hostname: db.local
-    sshUser: admin
-    connectionMethod: ssh
-    runtime: docker
-    tags:
-      - db
-      - storage
+  - name: db-node
+    connection:
+      type: ssh
+      host: db.local
+      user: admin
+      identityFile: ~/.ssh/homelab_ed25519
+    runtime:
+      docker: true
+      compose: false
+    tags: [db, storage]
 
-  # VPS in the cloud
-  vps-1:
-    hostname: 203.0.113.10
-    sshUser: deploy
-    sshPort: 2222
-    identityFile: ~/.ssh/vps_deploy
-    connectionMethod: ssh
-    runtime: docker
-    tags:
-      - cloud
-      - prod
+  - name: vps-1
+    connection:
+      type: ssh
+      host: 203.0.113.10
+      user: deploy
+      port: 2222
+      identityFile: ~/.ssh/vps_deploy
+    runtime:
+      docker: true
+      compose: false
+    tags: [cloud, prod]
 
-  # Edge node (reverse proxy, VPN)
-  edge-node:
-    hostname: 10.0.0.5
-    sshUser: root
-    connectionMethod: ssh
-    runtime: docker
-    tags:
-      - edge
-      - networking
+  - name: edge-node
+    connection:
+      type: ssh
+      host: 10.0.0.5
+      user: root
+      identityFile: ~/.ssh/homelab_ed25519
+    runtime:
+      docker: true
+      compose: true
+    tags: [edge, networking]
 
-# Backup configuration
+services:
+  - name: n8n
+    host: automation-node
+    stack: n8n-stack
+    composeService: n8n
+    healthcheck:
+      type: http
+      url: http://automation.local:5678/healthz
+      interval: 30
+      timeout: 10
+
+  - name: navidrome
+    host: media-node
+    stack: media-stack
+    composeService: navidrome
+    healthcheck:
+      type: http
+      url: http://media.local:4533/ping
+      interval: 30
+      timeout: 10
+
+  - name: postgres
+    host: db-node
+    healthcheck:
+      type: tcp
+      port: 5432
+      timeout: 5
+
 backup:
   baseDir: ~/homectl-backups
   schedules:
     postgres:
-      hosts:
-        - db-node
-        - vps-1
+      hosts: [db-node, vps-1]
       paths:
         - /var/lib/docker/volumes
-      databases:
-        - postgres
+      databases: [postgres]
       retentionDays: 30
     configs:
-      hosts:
-        - media-node
-        - automation-node
+      hosts: [media-node, automation-node]
       paths:
         - /home/*/docker-compose.yml
         - /etc/nginx
         - /etc/traefik
       retentionDays: 90
     weekly:
-      hosts:
-        - media-node
-        - automation-node
-        - vps-1
+      hosts: [media-node, automation-node, vps-1]
       paths:
         - /etc
         - /home/*/data
