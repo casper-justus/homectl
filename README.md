@@ -4,6 +4,36 @@
 
 homectl is a unified CLI for managing Docker/Compose workloads across multiple hosts — local machines, Raspberry Pis, VPS instances, and cloud VMs — all through a single YAML config and SSH-first architecture.
 
+## Install
+
+```bash
+# Linux / macOS
+curl -fsSL https://raw.githubusercontent.com/casper-justus/homectl/main/install.sh | bash
+```
+
+```powershell
+# Windows (PowerShell)
+iwr -useb https://raw.githubusercontent.com/casper-justus/homectl/main/install.ps1 | iex
+```
+
+The script auto-detects your OS, installs Node.js if missing, downloads the latest homectl, builds it, and links it globally.
+
+Alternatively via npm:
+
+```bash
+npm install -g homectl
+```
+
+## Quick start
+
+```bash
+homectl init                           # interactive setup
+homectl host ls                        # list all hosts
+homectl context use prod               # switch context
+homectl service ls                     # list all services
+homectl stack deploy myapp             # deploy a compose stack
+```
+
 ## Features
 
 - **Unified host management** — one config to rule all your machines
@@ -16,49 +46,6 @@ homectl is a unified CLI for managing Docker/Compose workloads across multiple h
 - **Machine-readable output** — `--json`, `--plain`, `--verbose`, `--quiet`
 - **Safety-first** — `--dry-run`, confirmation prompts, input validation
 - **Shell completion** — bash, zsh, fish
-
-## Installation
-
-```bash
-npm install -g homectl
-```
-
-Or clone and link:
-
-```bash
-git clone https://github.com/casper-justus/homectl.git
-cd homectl
-npm install
-npm run build
-npm link
-```
-
-## Quick start
-
-```bash
-# Interactive setup wizard
-homectl init
-
-# List hosts and their status
-homectl host ls
-
-# List all services across hosts
-homectl service ls
-
-# Switch context and deploy a stack
-homectl context use prod
-homectl stack deploy myapp
-
-# Run diagnostics
-homectl doctor all
-
-# View logs
-homectl logs tail n8n --tail 50
-
-# Backups
-homectl backup run nightly
-homectl backup verify nightly
-```
 
 ## Configuration
 
