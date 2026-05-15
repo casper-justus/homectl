@@ -1,0 +1,120 @@
+# homectl configuration
+# Customize for your homelab and cloud infrastructure.
+
+version: "1"
+
+# Active context
+currentContext: lab
+
+# Named contexts for different environments
+contexts:
+  lab:
+    description: "Local homelab network"
+    defaultHost: media-node
+    envLabels:
+      environment: lab
+      team: personal
+
+  prod:
+    description: "Production VPS"
+    defaultHost: vps-1
+    envLabels:
+      environment: prod
+      team: personal
+
+# Host definitions
+hosts:
+  # Local workstation (default when no host specified)
+  local:
+    hostname: localhost
+    connectionMethod: local
+    runtime: compose
+    tags:
+      - local
+      - dev
+
+  # Media server (Raspberry Pi or mini PC)
+  media-node:
+    hostname: media.local
+    sshUser: pi
+    sshPort: 22
+    identityFile: ~/.ssh/homelab_ed25519
+    connectionMethod: ssh
+    runtime: compose
+    tags:
+      - media
+      - lan
+
+  # Automation node (n8n, home assistant, etc.)
+  automation-node:
+    hostname: automation.local
+    sshUser: admin
+    connectionMethod: ssh
+    runtime: compose
+    tags:
+      - automation
+      - lan
+
+  # Database server
+  db-node:
+    hostname: db.local
+    sshUser: admin
+    connectionMethod: ssh
+    runtime: docker
+    tags:
+      - db
+      - storage
+
+  # VPS in the cloud
+  vps-1:
+    hostname: 203.0.113.10
+    sshUser: deploy
+    sshPort: 2222
+    identityFile: ~/.ssh/vps_deploy
+    connectionMethod: ssh
+    runtime: docker
+    tags:
+      - cloud
+      - prod
+
+  # Edge node (reverse proxy, VPN)
+  edge-node:
+    hostname: 10.0.0.5
+    sshUser: root
+    connectionMethod: ssh
+    runtime: docker
+    tags:
+      - edge
+      - networking
+
+# Backup configuration
+backup:
+  baseDir: ~/homectl-backups
+  schedules:
+    postgres:
+      hosts:
+        - db-node
+        - vps-1
+      paths:
+        - /var/lib/docker/volumes
+      databases:
+        - postgres
+      retentionDays: 30
+    configs:
+      hosts:
+        - media-node
+        - automation-node
+      paths:
+        - /home/*/docker-compose.yml
+        - /etc/nginx
+        - /etc/traefik
+      retentionDays: 90
+    weekly:
+      hosts:
+        - media-node
+        - automation-node
+        - vps-1
+      paths:
+        - /etc
+        - /home/*/data
+      retentionDays: 7
