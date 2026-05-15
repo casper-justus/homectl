@@ -7,10 +7,14 @@
   },
   "main": "dist/index.js",
   "scripts": {
+    "setup": "node setup.js",
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsc --watch",
-    "prepublishOnly": "npm run build"
+    "ci": "npm ci && npm run build",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "prepublishOnly": "npm run build",
+    "postinstall": "node -e \"if(!process.env.CI)process.exit(0)\" || npm run build"
   },
   "dependencies": {
     "commander": "^12.0.0",
@@ -19,6 +23,9 @@
     "cli-table3": "^0.6.3",
     "node-ssh": "^13.1.0",
     "dockerode": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "devDependencies": {
     "typescript": "^5.4.0",
