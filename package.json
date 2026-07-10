@@ -28,7 +28,7 @@
     "node": ">=18"
   },
   "devDependencies": {
-    "typescript": "^5.4.0",
+    "typescript": "^7.0.2",
     "@types/node": "^20.11.0",
     "@types/js-yaml": "^4.0.9",
     "@types/dockerode": "^4.0.0"
